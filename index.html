@@ -1,367 +1,417 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard de Controle de Maquinários</title>
+  <meta charset="utf-8" />
+  <title>Dashboard de Equipamentos</title>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Plugin para mostrar valores nos gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <!-- SheetJS para ler o .xlsx do Google Sheets -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f3f4f6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#f3f4f6;
+      margin:0;
+      padding:0;
+      color:#111827;
     }
     header {
-      background: #111827;
-      color: white;
-      padding: 18px 28px;
+      background:#111827;
+      color:#f9fafb;
+      padding:16px 32px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.25);
     }
-    h1 {
-      margin: 0;
-      font-size: 22px;
+    header h1 {
+      margin:0;
+      font-size:22px;
+      font-weight:600;
     }
-    .sub {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-top: 2px;
+    header .subtitle {
+      margin-top:4px;
+      font-size:12px;
+      color:#9ca3af;
     }
     .container {
-      padding: 18px 28px 40px 28px;
+      padding:20px 32px 32px 32px;
     }
-    .section {
-      margin-bottom: 36px;
+    .kpi-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      margin-bottom:24px;
     }
-    .section h2 {
-      margin: 0 0 4px 0;
-      font-size: 18px;
+    .kpi-card {
+      background:#ffffff;
+      border-radius:10px;
+      padding:12px 16px;
+      box-shadow:0 1px 4px rgba(15,23,42,0.15);
+      min-width:200px;
+      flex:1;
     }
-    .section p.desc {
-      margin: 0 0 14px 0;
-      font-size: 12px;
-      color: #6b7280;
+    .kpi-label {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      color:#6b7280;
+      margin-bottom:4px;
     }
-    .cards {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-bottom: 20px;
+    .kpi-value {
+      font-size:20px;
+      font-weight:600;
     }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 12px 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      min-width: 180px;
-      flex: 1;
-    }
-    .card-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-    .card-value {
-      font-size: 20px;
-      font-weight: bold;
+    .kpi-note {
+      margin-top:2px;
+      font-size:11px;
+      color:#9ca3af;
     }
     .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 20px;
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+      gap:20px;
     }
     .panel {
-      background: white;
-      border-radius: 10px;
-      padding: 14px 18px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      background:#ffffff;
+      border-radius:10px;
+      padding:14px 18px;
+      box-shadow:0 1px 4px rgba(15,23,42,0.10);
     }
-    .panel h3 {
-      margin: 0 0 8px 0;
-      font-size: 15px;
+    .panel h2 {
+      margin:0 0 4px 0;
+      font-size:16px;
+      font-weight:600;
+    }
+    .panel p.desc {
+      margin:0 0 10px 0;
+      font-size:12px;
+      color:#6b7280;
     }
     canvas {
-      width: 100% !important;
-      height: 260px !important;
+      width:100% !important;
+      height:260px !important;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      margin-top: 6px;
-    }
-    th, td {
-      border-bottom: 1px solid #e5e7eb;
-      padding: 4px 6px;
-      text-align: left;
-    }
-    th {
-      background: #f9fafb;
-      font-weight: 600;
-    }
-    .pill {
-      display: inline-block;
-      background: #e5e7eb;
-      padding: 3px 8px;
-      border-radius: 999px;
-      margin: 2px;
-      font-size: 11px;
+    .loading {
+      font-size:13px;
+      color:#6b7280;
+      margin-bottom:16px;
     }
     footer {
-      text-align: center;
-      font-size: 11px;
-      color: #9ca3af;
-      padding: 10px;
-      border-top: 1px solid #e5e7eb;
-      margin-top: 10px;
-      background: #f9fafb;
+      margin-top:20px;
+      border-top:1px solid #e5e7eb;
+      padding:10px 32px;
+      font-size:11px;
+      color:#9ca3af;
+      background:#f9fafb;
+      text-align:center;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Dashboard de Controle de Maquinários</h1>
-    <div class="sub">Visão geral por aba da planilha: Lançamentos, Equipamentos, Operadores e Tabelas Auxiliares</div>
-  </header>
-  <div class="container">
 
-    <!-- Seção LANCAMENTOS -->
-    <section class="section" id="sec-lanc">
-      <h2>Lançamentos (dedo-duro de uso)</h2>
-      <p class="desc">Resumo das horas trabalhadas e datas das últimas operações registradas na aba LANCAMENTOS.</p>
-      <div class="cards">
-        <div class="card">
-          <div class="card-title">Horas totais lançadas</div>
-          <div class="card-value">4.00 h</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Última data de operação</div>
-          <div class="card-value">2025-12-08 </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Equipamentos com algum lançamento</div>
-          <div class="card-value">1</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Operadores com lançamentos</div>
-          <div class="card-value">1</div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="panel">
-          <h3>Horas trabalhadas por equipamento</h3>
-          <canvas id="lancEquipChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Horas trabalhadas por operador</h3>
-          <canvas id="lancOpChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Horas lançadas por dia</h3>
-          <canvas id="lancDateChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Dedo-duro: última data de uso por equipamento</h3>
-          <table>
-            <thead>
-              <tr><th>Equipamento</th><th>Última data lançada</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>290</td><td>2025-12-08</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- Seção EQUIPAMENTOS -->
-    <section class="section" id="sec-equip">
-      <h2>Equipamentos</h2>
-      <p class="desc">Cadastro de máquinas, categorias, potência e situação (ativo / manutenção).</p>
-      <div class="cards">
-        <div class="card">
-          <div class="card-title">Total de equipamentos</div>
-          <div class="card-value">8</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Equipamentos ativos</div>
-          <div class="card-value">8</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Equipamentos em manutenção</div>
-          <div class="card-value">0</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Potência média</div>
-          <div class="card-value">81.4 cv</div>
-        </div>
-      </div>
-      <div class="grid">
-        <div class="panel">
-          <h3>Potência (cv) por equipamento</h3>
-          <canvas id="equipHpChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Quantidade por categoria</h3>
-          <canvas id="equipCatChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Equipamentos por situação</h3>
-          <canvas id="equipSituChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Custo hora (R$) por equipamento</h3>
-          <canvas id="equipCostChart"></canvas>
-          <p style="font-size:11px;color:#6b7280;margin-top:6px;">Obs.: só aparecem equipamentos com custo hora preenchido na aba EQUIPAMENTOS.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Seção OPERADORES -->
-    <section class="section" id="sec-ops">
-      <h2>Operadores</h2>
-      <p class="desc">Resumo dos operadores cadastrados, funções e custos de hora (se preenchidos).</p>
-      <div class="cards">
-        <div class="card">
-          <div class="card-title">Total de operadores</div>
-          <div class="card-value">7</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Operadores ativos</div>
-          <div class="card-value">7</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Funções diferentes</div>
-          <div class="card-value">1</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Operadores com custo/hora definido</div>
-          <div class="card-value">0</div>
-        </div>
-      </div>
-      <div class="grid">
-        <div class="panel">
-          <h3>Quantidade de operadores por função</h3>
-          <canvas id="opsFuncChart"></canvas>
-        </div>
-        <div class="panel">
-          <h3>Custo hora (R$) por operador</h3>
-          <canvas id="opsCostChart"></canvas>
-          <p style="font-size:11px;color:#6b7280;margin-top:6px;">Obs.: só aparecem operadores com custo hora preenchido na aba OPERADORES.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Seção TABELAS_AUX -->
-    <section class="section" id="sec-aux">
-      <h2>Tabelas auxiliares</h2>
-      <p class="desc">Listas de tipos de operação e condições padrões registradas na aba TABELAS_AUX, para usar como validação de dados ou filtros futuros.</p>
-      <div class="grid">
-        <div class="panel">
-          <h3>Tipos de operação cadastrados</h3>
-          <div>
-            <span class='pill'>Preparo de solo</span><span class='pill'>Plantio</span><span class='pill'>Pulverização</span><span class='pill'>Adubação</span><span class='pill'>Colheita</span><span class='pill'>Transporte</span><span class='pill'>Outro</span>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>Condições possíveis</h3>
-          <div>
-            <span class='pill'>Trabalho</span><span class='pill'>Manutenção</span><span class='pill'>Parado</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
+<header>
+  <h1>Painel de Equipamentos</h1>
+  <div class="subtitle">
+    Horas, custo e situação da frota alimentados automaticamente a partir de uma planilha do Google Sheets.
   </div>
-  <footer>
-    Dashboard HTML gerado a partir de Controle_Equipamentos_estruturado.xlsx — pronto para ser atualizado conforme você preenche a planilha.
-  </footer>
+</header>
 
-  <script>
-    const equipHoursLabels = ["290"];
-    const equipHoursValues = [4];
-    const opHoursLabels = ["Eduardo"];
-    const opHoursValues = [4];
-    const dateHoursLabels = ["2025-12-08"];
-    const dateHoursValues = [4];
+<div class="container">
+  <div id="loading" class="loading">
+    Carregando dados do Google Sheets...
+  </div>
 
-    const hpLabels = ["290", "John Deere", "275 CT", "275 Prof Alexandre", "Bobcat", "Valtra A114", "265", "Valmet 885"];
-    const hpValues = [92, 85, 75, 75, 60, 114, 65, 85];
-    const catLabels = ["Trator"];
-    const catValues = [8];
-    const situLabels = ["Ativo"];
-    const situValues = [8];
-    const funcLabels = ["Tratorista"];
-    const funcValues = [7];
-    const costOpLabels = [];
-    const costOpValues = [];
-    const costEqLabels = [];
-    const costEqValues = [];
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Data da última atualização</div>
+      <div class="kpi-value" id="kpi-last-date">-</div>
+      <div class="kpi-note">Última data lançada na aba LANCAMENTOS.</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Operadores com lançamento</div>
+      <div class="kpi-value" id="kpi-op-count">-</div>
+      <div class="kpi-note">Operadores com horas registradas.</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Equipamentos com uso registrado</div>
+      <div class="kpi-value" id="kpi-eq-used">-</div>
+      <div class="kpi-note">Máquinas que têm pelo menos uma hora lançada.</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Grupos com custo lançado</div>
+      <div class="kpi-value" id="kpi-grp-cost">-</div>
+      <div class="kpi-note">Centros de custo com valor na aba CUSTO POR GRUPO.</div>
+    </div>
+  </div>
 
-    function makeBarChart(id, labels, data, labelText) {
-      const ctx = document.getElementById(id);
-      if (!ctx || !labels.length) return;
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: labelText,
-            data: data,
-          }]
+  <div class="grid">
+    <div class="panel">
+      <h2>Horas trabalhadas por operador</h2>
+      <p class="desc">Distribuição das horas lançadas por operador.</p>
+      <canvas id="opChart"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Horas trabalhadas por equipamento</h2>
+      <p class="desc">Ajuda a identificar máquinas mais utilizadas e aquelas ociosas.</p>
+      <canvas id="eqChart"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Horas por grupo</h2>
+      <p class="desc">Horas acumuladas por grupo/centro de custo.</p>
+      <canvas id="grpHoursChart"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Custo por grupo</h2>
+      <p class="desc">Valores consolidados a partir da aba “CUSTO POR GRUPO”.</p>
+      <canvas id="grpCostChart"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Custo hora por equipamento</h2>
+      <p class="desc">Custo hora informado na aba EQUIPAMENTOS.</p>
+      <canvas id="costChart"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Situação dos equipamentos</h2>
+      <p class="desc">Quantidade de máquinas ativas e em manutenção.</p>
+      <canvas id="situChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Dashboard gerado automaticamente a partir da planilha pública do Google Sheets (formato .xlsx).
+</footer>
+
+<script>
+  const EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3RTMFeAPMzNQ8AJ8emFLMWaULlnZLEGlv57VvMnkk1-2LeredVXq5JSie7WaI70Dmy36ZQMjJXvbC/pub?output=xlsx";
+
+  // Helpers
+  function toNumber(v) {
+    const n = Number(v);
+    return isFinite(n) ? n : 0;
+  }
+
+  function parseDate(d) {
+    if (!d) return null;
+    if (d instanceof Date && !isNaN(d)) return d;
+    if (typeof d === "string") {
+      const dt = new Date(d);
+      return isNaN(dt) ? null : dt;
+    }
+    // Excel serial number?
+    if (typeof d === "number") {
+      // Excel date (days since 1899-12-30)
+      const epoch = new Date(Date.UTC(1899, 11, 30));
+      const ms = d * 24*60*60*1000;
+      const dt = new Date(epoch.getTime() + ms);
+      return isNaN(dt) ? null : dt;
+    }
+    return null;
+  }
+
+  function formatDateBr(d) {
+    if (!d || isNaN(d)) return "-";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = d.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+  }
+
+  function groupSum(rows, keyField, valueField) {
+    const map = new Map();
+    for (const r of rows) {
+      const k = String(r[keyField] ?? "").trim() || "(sem)";
+      const v = toNumber(r[valueField]);
+      if (!map.has(k)) map.set(k, 0);
+      map.set(k, map.get(k) + v);
+    }
+    return Array.from(map.entries()).map(([label, value]) => ({ label, value }));
+  }
+
+  function makeBar(id, labels, data, valuePrefix = "") {
+    const ctx = document.getElementById(id);
+    if (!ctx || !labels.length) return;
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ data }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: "end",
+            align: "end",
+            formatter: (value) =>
+              valuePrefix ? valuePrefix + value.toFixed(2) : value.toFixed(2),
+            font: { size: 10 }
+          }
         },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false }
+        scales: {
+          x: {
+            ticks: { autoSkip: true, maxRotation: 45, minRotation: 0 }
           },
-          scales: {
-            x: {
-              ticks: { autoSkip: true, maxRotation: 45, minRotation: 0 }
+          y: {
+            beginAtZero: true
+          }
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+  }
+
+  function makePie(id, labels, data) {
+    const ctx = document.getElementById(id);
+    if (!ctx || !labels.length) return;
+    new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels,
+        datasets: [{ data }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "bottom" },
+          datalabels: {
+            formatter: (value, ctx) => {
+              const total = ctx.chart.data.datasets[0].data
+                .reduce((a, b) => a + b, 0);
+              if (!total) return "";
+              const pct = (value / total * 100).toFixed(1);
+              return pct + "%";
             },
-            y: {
-              beginAtZero: true
-            }
+            font: { size: 10 }
           }
         }
-      });
-    }
+      },
+      plugins: [ChartDataLabels]
+    });
+  }
 
-    function makePieChart(id, labels, data) {
-      const ctx = document.getElementById(id);
-      if (!ctx || !labels.length) return;
-      new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'bottom' }
+  async function loadData() {
+    const loadingEl = document.getElementById("loading");
+    try {
+      const resp = await fetch(EXCEL_URL);
+      if (!resp.ok) throw new Error("Erro ao baixar planilha");
+      const buf = await resp.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+
+      const lancSheet = wb.Sheets["LANCAMENTOS"];
+      const equipSheet = wb.Sheets["EQUIPAMENTOS"];
+      const grpSheet = wb.Sheets["CUSTO POR GRUPO"];
+
+      if (!lancSheet || !equipSheet || !grpSheet) {
+        loadingEl.textContent = "Erro: uma das abas esperadas (LANCAMENTOS, EQUIPAMENTOS, CUSTO POR GRUPO) não foi encontrada.";
+        return;
+      }
+
+      const lanc = XLSX.utils.sheet_to_json(lancSheet, { defval: null });
+      const equip = XLSX.utils.sheet_to_json(equipSheet, { defval: null });
+      const grp = XLSX.utils.sheet_to_json(grpSheet, { defval: null });
+
+      // --- Processa lançamentos ---
+      let lastDate = null;
+      for (const r of lanc) {
+        const d = parseDate(r["Data"]);
+        if (d && (!lastDate || d > lastDate)) lastDate = d;
+      }
+
+      // adiciona campo Horas_calc
+      for (const r of lanc) {
+        let h = toNumber(r["Horas trabalhadas"]);
+        if (!h && r["Horímetro inicial"] != null && r["Horímetro final"] != null) {
+          h = toNumber(r["Horímetro final"]) - toNumber(r["Horímetro inicial"]);
+        }
+        r._Horas_calc = h;
+      }
+
+      // Horas por operador / equipamento / grupo
+      const opAgg = groupSum(lanc, "Operador", "_Horas_calc");
+      const eqAgg = groupSum(lanc, "Equipamento", "_Horas_calc");
+      const grpHoursAgg = groupSum(lanc, "Grupo", "_Horas_calc");
+
+      const opLabels = opAgg.map(x => x.label);
+      const opValues = opAgg.map(x => x.value);
+
+      const eqLabels = eqAgg.map(x => x.label);
+      const eqValues = eqAgg.map(x => x.value);
+
+      const grpHLabels = grpHoursAgg.map(x => x.label);
+      const grpHValues = grpHoursAgg.map(x => x.value);
+
+      // --- Equipamentos: custo hora e situação ---
+      const costLabels = [];
+      const costValues = [];
+      const situMap = new Map();
+
+      for (const r of equip) {
+        const nome = String(r["Nome"] ?? "").trim();
+        if (nome) {
+          const c = toNumber(r["Custo hora (R$)"]);
+          if (c > 0) {
+            costLabels.push(nome);
+            costValues.push(c);
           }
         }
-      });
+        const sit = String(r["Situação (Ativo/Manutenção)"] ?? "").trim() || "(sem)";
+        if (!situMap.has(sit)) situMap.set(sit, 0);
+        situMap.set(sit, situMap.get(sit) + 1);
+      }
+
+      const situLabels = Array.from(situMap.keys());
+      const situValues = Array.from(situMap.values());
+
+      // --- Custo por grupo (da aba CUSTO POR GRUPO) ---
+      const grpCostLabels = [];
+      const grpCostValues = [];
+      for (const r of grp) {
+        const g = String(r["GRUPO"] ?? "").trim();
+        const c = toNumber(r["CUSTO"]);
+        if (g) {
+          grpCostLabels.push(g);
+          grpCostValues.push(c);
+        }
+      }
+
+      // --- KPIs ---
+      const lastDateStr = formatDateBr(lastDate);
+      const opWithHours = opAgg.filter(x => x.value > 0).length;
+      const eqWithHours = eqAgg.filter(x => x.value > 0).length;
+      const grpWithCost = grpCostValues.filter(v => v > 0).length;
+
+      document.getElementById("kpi-last-date").textContent = lastDateStr;
+      document.getElementById("kpi-op-count").textContent = opWithHours;
+      document.getElementById("kpi-eq-used").textContent = eqWithHours;
+      document.getElementById("kpi-grp-cost").textContent = grpWithCost;
+
+      // --- Gráficos ---
+      makeBar("opChart", opLabels, opValues);
+      makeBar("eqChart", eqLabels, eqValues);
+      makeBar("grpHoursChart", grpHLabels, grpHValues);
+      makeBar("grpCostChart", grpCostLabels, grpCostValues, "R$ ");
+      makeBar("costChart", costLabels, costValues, "R$ ");
+      makePie("situChart", situLabels, situValues);
+
+      loadingEl.textContent = ""; // esconde "carregando"
+    } catch (err) {
+      console.error(err);
+      const loadingEl = document.getElementById("loading");
+      loadingEl.textContent = "Erro ao carregar ou processar os dados da planilha.";
     }
+  }
 
-    // Charts de LANCAMENTOS
-    makeBarChart('lancEquipChart', equipHoursLabels, equipHoursValues, 'Horas trabalhadas');
-    makeBarChart('lancOpChart', opHoursLabels, opHoursValues, 'Horas trabalhadas');
-    makeBarChart('lancDateChart', dateHoursLabels, dateHoursValues, 'Horas trabalhadas');
+  document.addEventListener("DOMContentLoaded", loadData);
+</script>
 
-    // Charts de EQUIPAMENTOS
-    makeBarChart('equipHpChart', hpLabels, hpValues, 'Potência (cv)');
-    makePieChart('equipCatChart', catLabels, catValues);
-    makePieChart('equipSituChart', situLabels, situValues);
-    makeBarChart('equipCostChart', costEqLabels, costEqValues, 'Custo hora (R$)');
-
-    // Charts de OPERADORES
-    makePieChart('opsFuncChart', funcLabels, funcValues);
-    makeBarChart('opsCostChart', costOpLabels, costOpValues, 'Custo hora (R$)');
-  </script>
 </body>
 </html>
