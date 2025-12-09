@@ -192,22 +192,41 @@
 <script>
   const EXCEL_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3RTMFeAPMzNQ8AJ8emFLMWaULlnZLEGlv57VvMnkk1-2LeredVXq5JSie7WaI70Dmy36ZQMjJXvbC/pub?output=xlsx";
 
-  // Helpers
+  // -------- Helpers --------
   function toNumber(v) {
+    if (v === null || v === undefined || v === "") return NaN;
+
+    // Já é número
+    if (typeof v === "number") {
+      return isFinite(v) ? v : NaN;
+    }
+
+    // String com vírgula ou ponto
+    if (typeof v === "string") {
+      const trimmed = v.trim();
+      if (!trimmed) return NaN;
+
+      // remove separador de milhar e troca vírgula por ponto
+      const clean = trimmed.replace(/\./g, "").replace(",", ".");
+      const n = parseFloat(clean);
+      return isFinite(n) ? n : NaN;
+    }
+
     const n = Number(v);
-    return isFinite(n) ? n : 0;
+    return isFinite(n) ? n : NaN;
   }
 
   function parseDate(d) {
     if (!d) return null;
     if (d instanceof Date && !isNaN(d)) return d;
+
     if (typeof d === "string") {
       const dt = new Date(d);
       return isNaN(dt) ? null : dt;
     }
-    // Excel serial number?
+
     if (typeof d === "number") {
-      // Excel date (days since 1899-12-30)
+      // Excel serial date (dias desde 1899-12-30)
       const epoch = new Date(Date.UTC(1899, 11, 30));
       const ms = d * 24*60*60*1000;
       const dt = new Date(epoch.getTime() + ms);
@@ -229,6 +248,7 @@
     for (const r of rows) {
       const k = String(r[keyField] ?? "").trim() || "(sem)";
       const v = toNumber(r[valueField]);
+      if (isNaN(v)) continue; // ignora valores não numéricos
       if (!map.has(k)) map.set(k, 0);
       map.set(k, map.get(k) + v);
     }
@@ -319,14 +339,14 @@
       const equip = XLSX.utils.sheet_to_json(equipSheet, { defval: null });
       const grp = XLSX.utils.sheet_to_json(grpSheet, { defval: null });
 
-      // --- Processa lançamentos ---
+      // --- Lançamentos ---
       let lastDate = null;
       for (const r of lanc) {
         const d = parseDate(r["Data"]);
         if (d && (!lastDate || d > lastDate)) lastDate = d;
       }
 
-      // adiciona campo Horas_calc
+      // Horas calculadas
       for (const r of lanc) {
         let h = toNumber(r["Horas trabalhadas"]);
         if (!h && r["Horímetro inicial"] != null && r["Horímetro final"] != null) {
@@ -357,12 +377,17 @@
       for (const r of equip) {
         const nome = String(r["Nome"] ?? "").trim();
         if (nome) {
-          const c = toNumber(r["Custo hora (R$)"]);
-          if (c > 0) {
+          const rawCost =
+            r["Custo hora (R$)"] ??
+            r["Custo hora máquina (R$)"] ??
+            r["Custo hora maquina (R$)"];
+          const c = toNumber(rawCost);
+          if (!isNaN(c)) {
             costLabels.push(nome);
             costValues.push(c);
           }
         }
+
         const sit = String(r["Situação (Ativo/Manutenção)"] ?? "").trim() || "(sem)";
         if (!situMap.has(sit)) situMap.set(sit, 0);
         situMap.set(sit, situMap.get(sit) + 1);
@@ -371,13 +396,13 @@
       const situLabels = Array.from(situMap.keys());
       const situValues = Array.from(situMap.values());
 
-      // --- Custo por grupo (da aba CUSTO POR GRUPO) ---
+      // --- Custo por grupo (aba CUSTO POR GRUPO) ---
       const grpCostLabels = [];
       const grpCostValues = [];
       for (const r of grp) {
         const g = String(r["GRUPO"] ?? "").trim();
         const c = toNumber(r["CUSTO"]);
-        if (g) {
+        if (g && !isNaN(c)) {
           grpCostLabels.push(g);
           grpCostValues.push(c);
         }
@@ -402,7 +427,7 @@
       makeBar("costChart", costLabels, costValues, "R$ ");
       makePie("situChart", situLabels, situValues);
 
-      loadingEl.textContent = ""; // esconde "carregando"
+      loadingEl.textContent = "";
     } catch (err) {
       console.error(err);
       const loadingEl = document.getElementById("loading");
