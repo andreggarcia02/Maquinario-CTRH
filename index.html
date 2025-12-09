@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Dashboard de Equipamentos</title>
 
   <!-- Chart.js -->
@@ -327,7 +330,11 @@
   async function loadData() {
     const loadingEl = document.getElementById("loading");
     try {
-      const resp = await fetch(EXCEL_URL);
+      // cache-busting na URL do Sheets
+      const cacheBust = Date.now();
+      const url = EXCEL_URL + (EXCEL_URL.includes("?") ? "&" : "?") + "v=" + cacheBust;
+
+      const resp = await fetch(url, { cache: "no-store" });
       if (!resp.ok) throw new Error("Erro ao baixar planilha");
       const buf = await resp.arrayBuffer();
       const wb = XLSX.read(buf, { type: "array" });
@@ -463,4 +470,3 @@
 
 </body>
 </html>
-
