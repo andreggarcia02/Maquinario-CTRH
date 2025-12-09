@@ -114,7 +114,7 @@
 <header>
   <h1>Painel de Equipamentos</h1>
   <div class="subtitle">
-    Horas, custo e situação da frota alimentados automaticamente a partir de uma planilha do Google Sheets.
+    Horas, custo, horímetro e situação da frota alimentados automaticamente a partir de uma planilha do Google Sheets.
   </div>
 </header>
 
@@ -175,6 +175,12 @@
       <h2>Custo hora por equipamento</h2>
       <p class="desc">Custo hora informado na aba EQUIPAMENTOS.</p>
       <canvas id="costChart"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>Horímetro atual por equipamento</h2>
+      <p class="desc">Valor de horímetro atual informado na aba EQUIPAMENTOS.</p>
+      <canvas id="horiChart"></canvas>
     </div>
 
     <div class="panel">
@@ -369,14 +375,18 @@
       const grpHLabels = grpHoursAgg.map(x => x.label);
       const grpHValues = grpHoursAgg.map(x => x.value);
 
-      // --- Equipamentos: custo hora e situação ---
+      // --- Equipamentos: custo hora, horímetro e situação ---
       const costLabels = [];
       const costValues = [];
+      const horiLabels = [];
+      const horiValues = [];
       const situMap = new Map();
 
       for (const r of equip) {
         const nome = String(r["Nome"] ?? "").trim();
+
         if (nome) {
+          // custo hora com tolerância de nome de coluna
           const rawCost =
             r["Custo hora (R$)"] ??
             r["Custo hora máquina (R$)"] ??
@@ -385,6 +395,18 @@
           if (!isNaN(c)) {
             costLabels.push(nome);
             costValues.push(c);
+          }
+
+          // horímetro atual com tolerância de nome de coluna
+          const rawHori =
+            r["Horímetro atual"] ??
+            r["Horimetro atual"] ??
+            r["Horímetro Atual"] ??
+            r["Horimetro Atual"];
+          const h = toNumber(rawHori);
+          if (!isNaN(h)) {
+            horiLabels.push(nome);
+            horiValues.push(h);
           }
         }
 
@@ -425,13 +447,14 @@
       makeBar("grpHoursChart", grpHLabels, grpHValues);
       makeBar("grpCostChart", grpCostLabels, grpCostValues, "R$ ");
       makeBar("costChart", costLabels, costValues, "R$ ");
+      makeBar("horiChart", horiLabels, horiValues);
       makePie("situChart", situLabels, situValues);
 
       loadingEl.textContent = "";
     } catch (err) {
       console.error(err);
-      const loadingEl = document.getElementById("loading");
-      loadingEl.textContent = "Erro ao carregar ou processar os dados da planilha.";
+      const loadingEl2 = document.getElementById("loading");
+      loadingEl2.textContent = "Erro ao carregar ou processar os dados da planilha.";
     }
   }
 
@@ -440,3 +463,4 @@
 
 </body>
 </html>
+
