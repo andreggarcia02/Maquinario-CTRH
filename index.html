@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard de Controle de Maquinários</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+    }
+    header {
+      background: #111827;
+      color: white;
+      padding: 18px 28px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+    .sub {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    .container {
+      padding: 18px 28px 40px 28px;
+    }
+    .section {
+      margin-bottom: 36px;
+    }
+    .section h2 {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+    }
+    .section p.desc {
+      margin: 0 0 14px 0;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      min-width: 180px;
+      flex: 1;
+    }
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .card-value {
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .panel {
+      background: white;
+      border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .panel h3 {
+      margin: 0 0 8px 0;
+      font-size: 15px;
+    }
+    canvas {
+      width: 100% !important;
+      height: 260px !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    th, td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+    .pill {
+      display: inline-block;
+      background: #e5e7eb;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin: 2px;
+      font-size: 11px;
+    }
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+      padding: 10px;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 10px;
+      background: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dashboard de Controle de Maquinários</h1>
+    <div class="sub">Visão geral por aba da planilha: Lançamentos, Equipamentos, Operadores e Tabelas Auxiliares</div>
+  </header>
+  <div class="container">
+
+    <!-- Seção LANCAMENTOS -->
+    <section class="section" id="sec-lanc">
+      <h2>Lançamentos (dedo-duro de uso)</h2>
+      <p class="desc">Resumo das horas trabalhadas e datas das últimas operações registradas na aba LANCAMENTOS.</p>
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Horas totais lançadas</div>
+          <div class="card-value">4.00 h</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Última data de operação</div>
+          <div class="card-value">2025-12-08 </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Equipamentos com algum lançamento</div>
+          <div class="card-value">1</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Operadores com lançamentos</div>
+          <div class="card-value">1</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h3>Horas trabalhadas por equipamento</h3>
+          <canvas id="lancEquipChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Horas trabalhadas por operador</h3>
+          <canvas id="lancOpChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Horas lançadas por dia</h3>
+          <canvas id="lancDateChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Dedo-duro: última data de uso por equipamento</h3>
+          <table>
+            <thead>
+              <tr><th>Equipamento</th><th>Última data lançada</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>290</td><td>2025-12-08</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção EQUIPAMENTOS -->
+    <section class="section" id="sec-equip">
+      <h2>Equipamentos</h2>
+      <p class="desc">Cadastro de máquinas, categorias, potência e situação (ativo / manutenção).</p>
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total de equipamentos</div>
+          <div class="card-value">8</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Equipamentos ativos</div>
+          <div class="card-value">8</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Equipamentos em manutenção</div>
+          <div class="card-value">0</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Potência média</div>
+          <div class="card-value">81.4 cv</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <h3>Potência (cv) por equipamento</h3>
+          <canvas id="equipHpChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Quantidade por categoria</h3>
+          <canvas id="equipCatChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Equipamentos por situação</h3>
+          <canvas id="equipSituChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Custo hora (R$) por equipamento</h3>
+          <canvas id="equipCostChart"></canvas>
+          <p style="font-size:11px;color:#6b7280;margin-top:6px;">Obs.: só aparecem equipamentos com custo hora preenchido na aba EQUIPAMENTOS.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção OPERADORES -->
+    <section class="section" id="sec-ops">
+      <h2>Operadores</h2>
+      <p class="desc">Resumo dos operadores cadastrados, funções e custos de hora (se preenchidos).</p>
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total de operadores</div>
+          <div class="card-value">7</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Operadores ativos</div>
+          <div class="card-value">7</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Funções diferentes</div>
+          <div class="card-value">1</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Operadores com custo/hora definido</div>
+          <div class="card-value">0</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="panel">
+          <h3>Quantidade de operadores por função</h3>
+          <canvas id="opsFuncChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Custo hora (R$) por operador</h3>
+          <canvas id="opsCostChart"></canvas>
+          <p style="font-size:11px;color:#6b7280;margin-top:6px;">Obs.: só aparecem operadores com custo hora preenchido na aba OPERADORES.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção TABELAS_AUX -->
+    <section class="section" id="sec-aux">
+      <h2>Tabelas auxiliares</h2>
+      <p class="desc">Listas de tipos de operação e condições padrões registradas na aba TABELAS_AUX, para usar como validação de dados ou filtros futuros.</p>
+      <div class="grid">
+        <div class="panel">
+          <h3>Tipos de operação cadastrados</h3>
+          <div>
+            <span class='pill'>Preparo de solo</span><span class='pill'>Plantio</span><span class='pill'>Pulverização</span><span class='pill'>Adubação</span><span class='pill'>Colheita</span><span class='pill'>Transporte</span><span class='pill'>Outro</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Condições possíveis</h3>
+          <div>
+            <span class='pill'>Trabalho</span><span class='pill'>Manutenção</span><span class='pill'>Parado</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <footer>
+    Dashboard HTML gerado a partir de Controle_Equipamentos_estruturado.xlsx — pronto para ser atualizado conforme você preenche a planilha.
+  </footer>
+
+  <script>
+    const equipHoursLabels = ["290"];
+    const equipHoursValues = [4];
+    const opHoursLabels = ["Eduardo"];
+    const opHoursValues = [4];
+    const dateHoursLabels = ["2025-12-08"];
+    const dateHoursValues = [4];
+
+    const hpLabels = ["290", "John Deere", "275 CT", "275 Prof Alexandre", "Bobcat", "Valtra A114", "265", "Valmet 885"];
+    const hpValues = [92, 85, 75, 75, 60, 114, 65, 85];
+    const catLabels = ["Trator"];
+    const catValues = [8];
+    const situLabels = ["Ativo"];
+    const situValues = [8];
+    const funcLabels = ["Tratorista"];
+    const funcValues = [7];
+    const costOpLabels = [];
+    const costOpValues = [];
+    const costEqLabels = [];
+    const costEqValues = [];
+
+    function makeBarChart(id, labels, data, labelText) {
+      const ctx = document.getElementById(id);
+      if (!ctx || !labels.length) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: labelText,
+            data: data,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              ticks: { autoSkip: true, maxRotation: 45, minRotation: 0 }
+            },
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function makePieChart(id, labels, data) {
+      const ctx = document.getElementById(id);
+      if (!ctx || !labels.length) return;
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    // Charts de LANCAMENTOS
+    makeBarChart('lancEquipChart', equipHoursLabels, equipHoursValues, 'Horas trabalhadas');
+    makeBarChart('lancOpChart', opHoursLabels, opHoursValues, 'Horas trabalhadas');
+    makeBarChart('lancDateChart', dateHoursLabels, dateHoursValues, 'Horas trabalhadas');
+
+    // Charts de EQUIPAMENTOS
+    makeBarChart('equipHpChart', hpLabels, hpValues, 'Potência (cv)');
+    makePieChart('equipCatChart', catLabels, catValues);
+    makePieChart('equipSituChart', situLabels, situValues);
+    makeBarChart('equipCostChart', costEqLabels, costEqValues, 'Custo hora (R$)');
+
+    // Charts de OPERADORES
+    makePieChart('opsFuncChart', funcLabels, funcValues);
+    makeBarChart('opsCostChart', costOpLabels, costOpValues, 'Custo hora (R$)');
+  </script>
+</body>
+</html>
